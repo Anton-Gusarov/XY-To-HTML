@@ -83,7 +83,6 @@ function pushDown(columnsMap, template, val) {
         }, {}),
         layers = getLayers(colsArray),
         ds = flatten(layers);
-    console.log(ds)
     const { topChanges, heightChanges } = getPushdownChanges(ds, layers, textComponents, val),
         allHeightChanges = Object.assign(heightChangesMap, heightChanges),
         columnsMapHeight = applyTopChangesToHeight(columnsMap, allHeightChanges);

@@ -88,10 +88,12 @@ const template =  {
     "kind": "TEMPLATE",
     "oldId": "root"
 };
-// document.getElementById('html').innerHTML = renderRowcol(flatten(cols, template));
+// document.getElementById('html').innerHTML = renderRowcol(flatten(cols, template));\
+let cmmap = cols;
 function doPushdown(val) {
-    const newCm = pushDown(cols, template, val);
-    renderWorkspace(newCm)
+    const newCm = pushDown(cmmap, template, val);
+    renderWorkspace(newCm);
+    cmmap = newCm;
 }
 //var tree = rbush(4);
 //tree.load(cols);
