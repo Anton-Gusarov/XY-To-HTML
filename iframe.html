@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<div id="test" style="width: 100px; height: 50px; background-color: aqua"></div>
+<script>
+    const el = document.getElementById('test');
+        let height = 50;
+    document.addEventListener("DOMContentLoaded", function(event) {
+        console.log("DOM fully loaded and parsed2");
+    });
+    document.body.onresize = function (ev) { console.log(1) }
+    setInterval(function () {
+        height +=10;
+        el.style.height = height+'px'
+    }, 500)
+</script>
+</body>
+</html>
