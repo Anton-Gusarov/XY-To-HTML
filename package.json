@@ -4,12 +4,14 @@
   "description": "",
   "main": "3.js",
   "scripts": {
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "eslint": "^4.16.0",
+    "express": "^4.16.4",
     "js-graph-algorithms": "^1.0.18",
     "ramda": "^0.25.0",
     "rbush": "^2.0.2"
