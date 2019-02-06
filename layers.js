@@ -46,6 +46,7 @@ function flatten(layers, template) {
 
 function applyTopChangesToMap(cmpMap, topChanges) {
     return Object.assign(cmpMap, Object.keys(topChanges).reduce((acc, key) => {
+        if (!cmpMap[key]) return acc;
         acc[key] = {...cmpMap[key]};
         acc[key].minY += topChanges[key];
         acc[key].maxY += topChanges[key];
@@ -55,6 +56,7 @@ function applyTopChangesToMap(cmpMap, topChanges) {
 
 function applyTopChangesToHeight(columnsMap, allHeightChanges) {
     return Object.assign(columnsMap, Object.keys(allHeightChanges).reduce((acc, key) => {
+        if (!columnsMap[key]) return acc;
         acc[key] = {...columnsMap[key]};
         acc[key].maxY += allHeightChanges[key];
     return acc;
