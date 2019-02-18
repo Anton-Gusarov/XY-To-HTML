@@ -88,7 +88,10 @@ const template =  {
     "kind": "TEMPLATE",
     "oldId": "root"
 };
-// document.getElementById('html').innerHTML = renderRowcol(flatten(cols, template));\
+const colsArray = [...toArray(cols)].concat(template),
+    layers = getLayers(colsArray),
+    ds = flatten(layers);
+document.getElementById('html').innerHTML = renderRowcol(ds, cols);
 let cmmap = cols;
 function doPushdown(val) {
     const newCm = pushDown(cmmap, template, val);

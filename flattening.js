@@ -45,29 +45,30 @@ function renderRowSet(rowstorender, ds) {
                 // no need for margins for this case but good to set min-height
                 res += `<div class="col" style="min-height: ${column.bottom - column.top}px; width: ${column.right - column.left}px">`;
                 res += renderRowSet(column.rows, ds);
-                res += `</div>`
+                res += `<br class="cl"/></div>`
             } else {
                 // it is a component
-                res += `<div class="col" style="min-height: ${column.bottom - column.top}px; margin-top: ${column.minY - column.top}px; margin-left: ${column.minX - column.left}px">`;
+                res += `<div class="col" style="min-height: ${column.maxY - column.minY}px; margin-top: ${column.minY - column.top}px; margin-left: ${column.minX - column.left}px">`;
                 res += renderComponentFl(column, ds);
-                res += `</div>`
+                res += `<br class="cl"/></div>`
             }
         }
-        res += `<br class="cl"/></div>`;
+        // res += `<br class="cl"/></div>`;
+        res += `</div>`;
     }
     return res;
 }
 function renderComponentFl(cmp, ds) {
     return `<div class="compFl" id="` + cmp.oldId + `" style="
         width: ` + (cmp.maxX - cmp.minX) + `px;
-        height: ` + (cmp.maxY - cmp.minY)  + `px;
+        min-height: ` + (cmp.maxY - cmp.minY)  + `px;
         background-color: ` + kindColor[cmp.kind]  + `;
         ">${ds[cmp.id] ? renderRowSet(ds[cmp.id], ds) : ''}</div>`;
 }
 function renderRowcol(beforeds, cmpMap, template) {
     console.log(beforeds)
     const ds = Object.keys(beforeds).reduce((acc, key) => {
-            acc[key] = getRowColDataStructure(beforeds[key]);
+            acc[key] = getRowColDataStructure(beforeds[key], (cmpMap[key] || {}).minX, (cmpMap[key] || {}).minY);
             return acc;
         }, {}),
         rows = ds[0];
