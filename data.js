@@ -1,5 +1,5 @@
 var cols = {
-    /*"1": {
+    "1": {
         "minX": 0,
         "minY": 4380,
         "maxX": 1180,
@@ -18,7 +18,7 @@ var cols = {
         "zIndex": 6,
         "kind": "TEXT",
         "oldId": "AF4FD733-CFEF-45B4-9767-0260C33A983C"
-    },*/
+    },
     "3": {
         "minX": 0,
         "minY": 0,
@@ -49,7 +49,7 @@ var cols = {
         "kind": "MENU",
         "oldId": "41C73969-6468-484F-BA3F-9D40A0BBDC45"
     },
-    /*"6": {
+    "6": {
         "minX": 369,
         "minY": 4408,
         "maxX": 391,
@@ -139,7 +139,7 @@ var cols = {
         "kind": "TEXT",
         "oldId": "A2569E40-C86A-4486-8DD1-B7246659E5F9"
     },
-    "15": {
+    /*"15": {
         "minX": 0,
         "minY": 3790,
         "maxX": 1180,
@@ -148,8 +148,8 @@ var cols = {
         "zIndex": 2,
         "kind": "STRIP",
         "oldId": "3C4BA84F-F2A9-404F-A401-169E114781B3"
-    },
-    "16": {
+    },*/
+    /*"16": {
         "minX": 230,
         "minY": 3864,
         "maxX": 949,
@@ -158,16 +158,6 @@ var cols = {
         "zIndex": 61,
         "kind": "TEXT",
         "oldId": "5B35CCF7-DB72-4EB7-BA5B-D3A047E80C34"
-    },
-    "17": {
-        "minX": 10,
-        "minY": 4027,
-        "maxX": 1170,
-        "maxY": 4301,
-        "id": 17,
-        "zIndex": 62,
-        "kind": "GALLERY",
-        "oldId": "1769B1AE-95A3-4B11-9C55-06D56B88277C"
     },*/
     "18": {
         "minX": 0,
@@ -199,7 +189,7 @@ var cols = {
         "kind": "BACKGROUND",
         "oldId": "084615DB-8932-4E89-9776-77EEDAC509C9"
     },
-    "21": {
+/*    "21": {
         "minX": 211,
         "minY": 436,
         "maxX": 968.9999999999999,
@@ -208,7 +198,7 @@ var cols = {
         "zIndex": 110,
         "kind": "TEXT",
         "oldId": "8DACC9D0-F693-4E61-A523-63EA44048F00"
-    },
+    },*/
     "22": {
         "minX": 500,
         "minY": 590,
@@ -235,7 +225,7 @@ var cols = {
         "maxX": 969.0000000000001,
         "maxY": 520,
         "id": 24,
-        "zIndex": 108,
+        "zIndex": 105,
         "kind": "BACKGROUND",
         "oldId": "C9356C13-A762-49CE-8DF5-4ED8468E8B5A"
     },
@@ -539,7 +529,7 @@ var cols = {
         "kind": "TEXT",
         "oldId": "E8331897-17F3-420E-9497-005046125550"
     },
-    /*"55": {
+    "55": {
         "minX": 800,
         "minY": 3190,
         "maxX": 1180,
@@ -718,7 +708,7 @@ var cols = {
         "zIndex": 160,
         "kind": "BUTTON",
         "oldId": "927142A8-3B19-448C-92F2-98175956BABE"
-    },*/
+    },
     "73": {
         "minX": 211,
         "minY": 827,
