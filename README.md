@@ -5,4 +5,4 @@ Check [wiki](https://github.com/Anton-Gusarov/XY-To-HTML/wiki) for thorough docu
 
 The code is documented as well
 
-[Demo](serene-depths-35688.herokuapp.com)
+[Demo](https://serene-depths-35688.herokuapp.com/)
