@@ -1,19 +1,10 @@
-function toArray(map) {
-    return Object.keys(map).map(function (value) { return map[value] })
-}
-function toMap(ar) {
-    return ar.reduce((acc, item) => {
-        acc[item.id] = item;
+function flatten(layers, template) {
+    const structure = layers.reduce((acc, layer) => {
+        // We produce grid for every layer independently. Elements on the page without block will also produce a grid.
+        acc[layer.block.id] = getRowsAndCols(toMap(layer.items));
         return acc;
     }, {});
-}
-
-function RbushBbox(minx, miny, maxx, maxy, id) {
-    this.minX = minx;
-    this.minY = miny;
-    this.maxX = maxx;
-    this.maxY = maxy;
-    this.id = id;
+    return structure;
 }
 // Finds all columns which together with @columnToCheck form an intersecting by Y group of columns. They produce a single row.
 function findColumnsOnSameY(allColumns, columnToCheck) {
@@ -41,67 +32,11 @@ function findColumnsOnSameY(allColumns, columnToCheck) {
     return columnsOnSameXTree.all();
 }
 /**
- * Create Saturated graph from rbush bboxes array
- * @param bboxes {RbushBbox[]}
- * @returns {DiGraph|*}
+ * This function groups a long array @componentsIds into short groups
+ * @param componentsIds
+ * @param items
+ * @returns {Array}
  */
-function createVerticalSaturatedGraph(bboxes) {
-    var tree = rbush();
-    tree.load(bboxes);
-    const maxX = tree.data.maxX,
-        maxY = tree.data.maxY,
-        intersectionsX = {},
-    // assign vertices according to ids of elements
-        newIds = bboxes.reduce(function (map, element, index) {
-            return {...map, [element.id]: index}
-        }, {});
-    bboxes.forEach((cmp) => {
-        const checkBBox = {
-            minX: cmp.minX+1,
-            minY: cmp.minY+1,
-            maxX: cmp.maxX-1,
-            maxY: maxY-1
-        };
-        intersectionsX[cmp.id] = tree.search(checkBBox).map(treeRecord => treeRecord.id);
-    });
-    var g = new jsgraphs.DiGraph(bboxes.length);
-    Object.keys(intersectionsX).forEach((key) => {
-        const intersections = intersectionsX[key],
-            newIdKey = newIds[key];
-        intersections.filter(function (cmpId) {
-            return cmpId !== key;
-        }).forEach(cmpId => g.addEdge(newIdKey, newIds[parseInt(cmpId, 10)]));
-
-});
-    return g;
-}
-
-function createPlainGrpah(g) {
-    var pg = new jsgraphs.Graph(g.V);
-    for (var v = 0; v < g.V; ++v) {
-        var adj_v = g.adjList[v];
-        for (var i = 0; i < adj_v.length; ++i){
-            var w = adj_v[i];
-            pg.addEdge(w, v);
-        }
-    }
-    return pg;
-}
-
-function findComponents(g) {
-    const pg = createPlainGrpah(g);
-    return new jsgraphs.ConnectedComponents(pg)
-}
-
-function rbushToColumnSize(tree) {
-    return {
-        minX: tree.data.minX,
-        minY: tree.data.minY,
-        maxX: tree.data.maxX,
-        maxY: tree.data.maxY
-    }
-}
-
 function extractGroupsFromComponents(componentsIds, items) {
     const groupMap = componentsIds.reduce(function (map, groupId, index) {
             const group = map[groupId] || [];
@@ -121,13 +56,16 @@ function getRowsAndCols(columnsMap) {
     //const columnsMap = convertCmpMapToColumnMap(componentsMap),
         const componentsArray = toArray(columnsMap),
         floatedMap = {},
-        g = createVerticalSaturatedGraph(componentsArray),
+        //Convenient search for overlapped elements
+        g = createVerticalSaturatedGraph(componentsArray), // see docs for this function
         components = new jsgraphs.StronglyConnectedComponents(g);
     const groups = extractGroupsFromComponents(components.id, componentsArray),
-        complexGroups = groups.filter(function (group) {
+    // we need only groups with multiple elements. We need to filter out floating elements to produce a proper grid.
+        overlappedGroups = groups.filter(function (group) {
             return group.length > 1;
         });
-    complexGroups.forEach(function (group) {
+    // filtering out floating elements
+    overlappedGroups.forEach(function (group) {
         const staticColumn = getStaticComponent(group);
         floatedMap[staticColumn.id] = [];
         group.filter(function (column) {
@@ -138,12 +76,14 @@ function getRowsAndCols(columnsMap) {
         });
         staticColumn.floated = floatedMap[staticColumn.id];
     });
+    // initial map of complex columns which will be modified further in functions produceRows and mergeRows
     const nestedColumnsData = {
         0: toArray(columnsMap)
         };
     let rows = produceRows(nestedColumnsData[0], nestedColumnsData, columnsMap);
+    // We now make a proper grid with high columns
     rows = mergeRows(rows, nestedColumnsData, columnsMap);
-    // This loop inserts @components property to the complex columns (which contain rows)
+    // This loop inserts @components property to the complex columns (which contain rows). Making data structure convenuent for producing HTML.
     Object.keys(nestedColumnsData).forEach(function (key) {
         if (key === "0" || !parseInt(key, 10)) {
             return;
@@ -164,8 +104,9 @@ function getRowsAndCols(columnsMap) {
  */
 function produceRows(columns, nestedColumnsData, allColumnsMap, columnId = 0) {
     const
-    // create a big column
+    // Produce a major column from all @columns
         mainColumn = rbushToColumnSize(rbush().load(columns)),
+        // Create complexColumnQeueue with that element
         complexColQ = [mainColumn];
     // Create an incremented index for newly created complex columns
     let maxComplexColIndex = parseInt(Object.keys(allColumnsMap).sort(function (a, b) { return parseInt(b, 10) - parseInt(a, 10); })[0], 10);
@@ -176,29 +117,30 @@ function produceRows(columns, nestedColumnsData, allColumnsMap, columnId = 0) {
     while (complexColQ.length) {
         const currentComplexCol = complexColQ.shift(),
             currentComplexColIndex = currentComplexCol.id || columnId,
-        // nested columns inside complex one
+        // Find columns which are included in the current one
             nestedColumnsInsideCurrentComplex = nestedColumnsData[currentComplexColIndex],
             markedMinorColumns = {},
             rows = [],
         // Keep data of previously created column in order to stop on repeating iterations. It happens on quadratic patterns.
             currentComplexColToCheck = { ...currentComplexCol };
     delete currentComplexColToCheck.id;
-    // the column was added before so that it is a ref to a column inside parent row. remove this to avoid detractor
+    // TODO remove comment. The column was added before so that it is a ref to a column inside parent row. remove this to avoid ambiguity
     currentComplexCol.rows = rows;
     for (let j = 0; j < nestedColumnsInsideCurrentComplex.length; j++) {
         const currentCol = nestedColumnsInsideCurrentComplex[j];
         // Avoid nested columns from calculation because now we produce new columns from existing ones.
         if (markedMinorColumns[currentCol.id]) continue;
-        // columns which will be fit into single row
+        // Retrieve columns which are on a same row with @currentCol
         let sameRowColumns = findColumnsOnSameY(nestedColumnsInsideCurrentComplex, currentCol);
+        // Mark these columns in order to skip them from doing the same again and again because they will appear in this loop
         sameRowColumns.forEach(function (column) {
             markedMinorColumns[column.id] = true;
         });
-        // Find vertically overlapping simple columns and group them into complex columns of the row
+        // Find vertically mutually projected columns and group them. They will form new columns for further splitting.
         const g = createVerticalSaturatedGraph(sameRowColumns);
         const components = findComponents(g);
-        // const groups = findGroupsOnSameX(sameRowColumns);
-        // Check if there are X overlapping columns. If there are they are subject to nested row-col structure and thus they are complex.
+        // TODO: const groups = findGroupsOnSameX(sameRowColumns); // planned
+        // It means that there are groups. If no mutual projection found then all the elements here are independent.
         if (components.count < sameRowColumns.length) {
             // Groups are the same as columns
             const groups = extractGroupsFromComponents(components.id, sameRowColumns),
@@ -211,15 +153,16 @@ function produceRows(columns, nestedColumnsData, allColumnsMap, columnId = 0) {
                 previousGroup;
             complexGroups.forEach(group => {
                 if (R.equals(group, previousGroup)) {
-                    // Never noticed it comes here
+                    // Never noticed it steps here
                     return;
                 }
                 previousGroup = group;
                 maxComplexColIndex++;
                 // New column from group
                 const newColumn = rbushToColumnSize((rbush()).load(group));
+                // It is the case when 4 or more columns produce unsplittable rectangular and columns with absolute position appear. Some required actions.
+                // Quadratic pattern. same col. Find floating components but one of them left static. Assume that these are simple columns because splitting logic cannot produce quadratic pattern
                 if (R.equals(currentComplexColToCheck, newColumn)) {
-                    // quadratic pattern. same col. Find floating components but one of them left static. Assume that these are simple columns because splitting logic cannot produce quadratic pattern
                     const staticColumn = getStaticComponent(group),
                         columnsToFloat = group.filter(function (column) {
                             return column !== staticColumn;
@@ -277,7 +220,7 @@ function sortRowsByTop(rows) {
 
 /**
  *  Optimizes row-col structure to fit application needs like columns must be as high as possible for mobile view ordering.
- Merges all possible rows and creates new columns if two rows can be united into single.
+ Merges all possible rows and creates new columns if two rows can be united into single. See docs.
  * @param rowsOriginal row-col DS for merging
  * @param nestedColumnsData map of complex columns feat. its nested columns
  * @param allColumnsMap all the columns at a time
@@ -300,10 +243,14 @@ function mergeRows(rowsOriginal, nestedColumnsData, allColumnsMap) {
         const nextRow = rows[i + 1];
         if (nextRow) {
             const checkedRowSet = [...rowSet, nextRow];
-            // const checkedGroups = findGroupsOnSameX(R.flatten(checkedRowSet));
-            const g = createVerticalSaturatedGraph(R.flatten(checkedRowSet));
+            // TODO const checkedGroups = findGroupsOnSameX(R.flatten(checkedRowSet));
+            // Find vertically mutually projected columns and group them. They will form new columns for further splitting.
+            const g = createVerticalSaturatedGraph(
+                // This is the core action of merging. We flatten several arrays and run the logic to identify if we can produce more columns
+                R.flatten(checkedRowSet)
+            );
             const components = findComponents(g);
-            // avoid producing new columns and keep on adding more rows until number or components reduces. Onle then create column
+            // avoid producing new columns and keep adding more rows until number of components reduces. Only then create column
             if (components.count > 1) {
                 continue;
             } else {
@@ -316,7 +263,8 @@ function mergeRows(rowsOriginal, nestedColumnsData, allColumnsMap) {
         }
         if (startMerging) {
             // Find distinct columns in these rows
-            // const groups = findGroupsOnSameX(R.flatten(rowSet)),
+            // TODO const groups = findGroupsOnSameX(R.flatten(rowSet)),
+            // Almost the same action as above with flattening but now we produce columns not just identifying
             const g = createVerticalSaturatedGraph(R.flatten(rowSet)),
                 components = findComponents(g),
                 groups = extractGroupsFromComponents(components.id, R.flatten(rowSet)),
@@ -324,7 +272,7 @@ function mergeRows(rowsOriginal, nestedColumnsData, allColumnsMap) {
             rowSet = [];
             groups.forEach(group => {
                 if (group.length === 1) {
-                    // only one component in the group and it will have an own column
+                    // only one component in the group and it will have own column
                     sameRowColumns.push(group[0]);
                     return;
                 }
@@ -339,8 +287,8 @@ function mergeRows(rowsOriginal, nestedColumnsData, allColumnsMap) {
                 sameRowColumns.push(newColumn);
                 let rowsDiff = 1,
                     groupRowsAfter;
-                // Once we have a one from new columns from merged rows we have to split it to the rows and merge again
-                // Keep on doing it until number of rows stopped decreasing
+                // The below loop is interesting. We produce rows from the given group and then recursively call mergeRows on that row set
+                // and compare number of rows before and after. Do this until algorithm stuck and cannot compress further.
                 while (rowsDiff > 0) {
                     const groupRowsBefore = produceRows(group, nestedColumnsData, allColumnsMap, maxComplexColIndex),
                         rowsNumberBefore = groupRowsBefore.length;
@@ -354,33 +302,6 @@ function mergeRows(rowsOriginal, nestedColumnsData, allColumnsMap) {
         }
     }
     return sortRowsByTop(finalRows);
-}
-
-function findPathToComponent(rows, componentId) {
-    let i = 0,
-    j = 0;
-// no floats needed, as they are not supposed to push down
-//if (!group.rows) {
-//    return [];
-//}
-for (; i < rows.length; i++) {
-    let row = rows[i]; // still array
-    for (j = 0; j < row.length; j++) {
-        let column = row[j];
-        if (column.id === componentId) {
-            return [i, j];
-        } else
-        //if (column.components.length > 0 && (R.findIndex(R.propEq('id', componentId))(column.components) > -1)) {
-            if (column.rows && column.rows.length > 0) {
-                const nestedPath = findPathToComponent(column.rows, componentId);
-                if (nestedPath && nestedPath.length > 0) {
-                    return [i, j, 'rows'].concat(nestedPath);
-                }
-            }
-        //}
-    }
-}
-return [];
 }
 
 /**
@@ -403,39 +324,4 @@ function flattenColumnList(column, nestedColumnsData, columnsMap) {
         finalList.push(...column.components);
     }
     return finalList;
-}
-
-// Takes path to current component's column. Shifts to the next row. Collects components inside those rows traversing further within group.
-// Structure of the path is ['rows', i, 'columns', j, ['rows', i, 'columns', j]]
-function findComponentsFurtherInPath(rows, pathInitial) {
-    let path = [...pathInitial],
-    components = [];
-while (path.length > 0) {
-    // shift to the next row happens here
-    // $FlowFixMe array has different types
-    let rowCounter = path[path.length - 2] + 1;
-    path[path.length - 2] = rowCounter;
-    let row = R.path(path.slice(0, path.length - 1))(rows);
-    while (row) {
-        let columnCounter = 0;
-        path[path.length - 1] = columnCounter;
-        let column = R.path(path)(rows);
-        while (column) {
-            components = components
-                .concat(column.components && column.components.length ? R.pluck('id', column.components): [column.id])
-                .concat(column.floated ? R.pluck('id', column.floated) : []);
-            columnCounter++;
-            path[path.length - 1] = columnCounter;
-            column = R.path(path)(rows);
-        }
-        columnCounter = 0;
-        path[path.length - 1] = columnCounter;
-        rowCounter++;
-        path[path.length - 2] = rowCounter;
-        row = R.path(path.slice(0, path.length - 1))(rows);
-    }
-    // level up in path
-    path.splice(-3, path.length);
-}
-return components;
 }

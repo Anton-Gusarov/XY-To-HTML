@@ -1,3 +1,35 @@
+const kindColor = {
+    'TEXT': 'black',
+    'BUTTON': 'green',
+    'IMAGE': 'pink',
+    'BACKGROUND': 'white',
+    'STRIP': 'gray'
+};
+const kindBorder = {
+    'TEXT': 'none',
+    'BUTTON': 'none',
+    'IMAGE': 'none',
+    'BACKGROUND': '1px black solid',
+    'STRIP': 'none'
+}
+function renderComponent(cmp) {
+    return `<div class="comp" id="` + cmp.oldId + `" style="
+        top: ` + cmp.minY + `px;
+        left: ` + cmp.minX + `px;
+        width: ` + (cmp.maxX - cmp.minX) + `px;
+        height: ` + (cmp.maxY - cmp.minY)  + `px;
+        z-index: ` + (cmp.zIndex)  + `;
+        background-color: ` + kindColor[cmp.kind]  + `;
+        "></div>`
+}
+
+function renderWorkspace(compMap) {
+    const cols = toArray(compMap),
+        bigCol = rbush().load(cols);
+    document.getElementById('workspace').style.width = bigCol.maxX;
+    document.getElementById('workspace').style.height = bigCol.maxY;
+    document.getElementById('workspace').innerHTML = cols.map(renderComponent).join('\n');
+}
 function getRowColDataStructure(rows, parentLeft = 0, parentTop = 0) {
     let rowBottom = parentTop;
     const newRows = [];

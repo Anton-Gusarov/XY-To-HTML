@@ -1,31 +1,16 @@
-<!--
-To see growing call doPushdown(60<or any number in px to grow>). Black components are growing.
-
-What this demo application does is described in this section. It emulates HTML behaviour whenever any of the components (boxes) are growing vertically.
-What does it mean. The current page if viewed in browser displays these components and this set resembles an arbitrary landing page.
-This data is taken from real page but simplified. Black boxes are growing. In the same time we see boxes fully contained inside bigger ones.
-From HTML perspective the bigger boxes are containers. So that these containers and below boxes must go down according
-to like it is in HTML. After growing the landing page must remain its layout, look and design.
-In order to produce HTML from absolute positioned boxes like it is
-in data.js I wrote functions.js where the absolute boxes are transformed to a data structure which is a grid the cells
-of which contain a single box. And because we can have a flat and strict structure, then we produce HTML. The function
-getRowsAndCols makes such structure. The rendered HTML will be supplied later.
-
-The code calculates new positions of elements relying on HTML data structure and renders boxes absolute positioned with
-new coordinates and dimensions.
--->
 <!DOCTYPE html>
 <html>
 <head lang="en">
     <meta charset="UTF-8">
     <script src="node_modules/ramda/dist/ramda.min.js"></script>
     <script src="node_modules/rbush/rbush.js"></script>
-    <script src="bfs.js"></script>
-    <script src="functions.js"></script>
+    <script src="helper.js"></script>
+    <script src="graphrbush.js"></script>
+    <script src="grid.js"></script>
     <script src="node_modules/js-graph-algorithms/src/jsgraphs.js"></script>
     <script src="layers.js"></script>
     <script src="data.js"></script>
-    <script src="flattening.js"></script>
+    <script src="rendering.js"></script>
     <script src="pushdown.js"></script>
     <title></title>
     <style>
@@ -62,15 +47,49 @@ new coordinates and dimensions.
 </head>
 <body>
 <p>
-    On the left - absolute positioned elements, Right - HTML produced page. These elements are from data.js and processed
-    through getRowsAndCols in order to get grid data structure necessary for HTML rendering. Also a valuable feature
-    can be observed by calling doPushdown(60&laquo;or any number in px to grow&raquo;) from dev console.
-    Black components are growing
-    and pushing below components according to the html rendering data structure. It happens in left side - absolute positioned.
-    In doPushdown there is no any dependency on DOM.
+    On the left - absolute positioned elements, Right - HTML produced page. The boxes here are shapes of various
+    elements
+    from an
+    arbitrary landing page. Black - text, pink - image, green - button and gray - just a div.
+    These
+    elements are in
+    data.js. Feature
+    is available by clicking the button below.
+    Black boxes are growing
+    and pushing elements below relying on the html rendering data structure, i.e. in order to find out which elements
+   to push the algorithm parses data structure. We can't simply identify and push all below situated elements. It happen
+    s in
+    left
+    side -
+    absolute
+    positioned. Some inconsistency can be observed on the right with big whitespace and also when you click Push down
+    several times. Also I'm adding borders on the right. Clicking Push down doesn't reflect on the right.
 </p>
-<p>For your convenience the window can be zoomed out</p>
-<div style="position: relative">
+<input type="text" style="font-size: 1em" value="60" id="pdv" />
+<button style="font-size: 1em;" onclick="" id="pdb">Push down</button>
+    <span style="width: 100px; display: inline-block"></span>
+<button style="font-size: 1em;" id="zoomm">-</button>
+<span style="display: inline-block; margin: 0 2em">Zoom In/Out</span>
+<button style="font-size: 1em;" id="zoomp">+</button>
+<script>
+    var button = document.getElementById('pdb'),
+            txt = document.getElementById('pdv'),
+            zoom = 0.5,
+            zoomm = document.getElementById('zoomm'),
+            zoomp = document.getElementById('zoomp');
+    button.onclick = function () {
+        doPushdown(parseInt(txt.value, 10))
+    }
+    zoomm.onclick = function () {
+        zoom -= 0.1;
+        document.getElementById('showcase').style.zoom = zoom;
+    }
+    zoomp.onclick = function () {
+        zoom += 0.1;
+        document.getElementById('showcase').style.zoom = zoom;
+    }
+</script>
+<div style="position: relative; zoom: 0.5; margin-top: 1em" id="showcase">
 <div id="workspace" style="float: left; position: relative;"></div>
 <div id="html" style="margin-left: 1200px;position: relative; width: 1200px"></div>
 </div>
