@@ -1,5 +1,5 @@
 # XY-To-HTML
-Quite complex algorythm to build HTML grid layout from absolute positioned elements. You have:
+Quite complex algorithm to build HTML grid layout from absolute positioned elements. You have:
 
 ```
 <div class="comp" id="C2C0EA52-75F1-4AF6-96E0-FB2EAF06A56E" style="
